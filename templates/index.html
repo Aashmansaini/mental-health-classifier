@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mental Health Classifier</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 30px 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            width: 100%;
+            max-width: 650px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 6px;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            color: #1a1a2e;
+        }
+
+        p.subtitle {
+            font-size: 0.88rem;
+            color: #999;
+            margin-bottom: 24px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 10px;
+            background: white;
+            font-size: 0.9rem;
+            cursor: pointer;
+            color: #888;
+            transition: all 0.2s;
+        }
+
+        .tab.active {
+            border-color: #6c63ff;
+            color: #6c63ff;
+            background: #f5f3ff;
+            font-weight: 600;
+        }
+
+        .panel {
+            display: none;
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 16px;
+            border: 1.5px solid #e8e8e8;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            resize: vertical;
+            min-height: 130px;
+            outline: none;
+            transition: border 0.2s;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        textarea:focus {
+            border-color: #6c63ff;
+        }
+
+        .btn {
+            margin-top: 14px;
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #6c63ff, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .record-zone {
+            border: 2px solid #e0e0e0;
+            border-radius: 16px;
+            padding: 40px 20px;
+            text-align: center;
+            color: #aaa;
+            transition: all 0.3s;
+            margin-bottom: 14px;
+        }
+
+        .record-zone.recording {
+            border-color: #e74c3c;
+            background: #fff5f5;
+            color: #e74c3c;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.3); }
+            50%       { box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); }
+        }
+
+        .record-zone .icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .record-timer {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-top: 10px;
+        }
+
+        .record-btns {
+            display: flex;
+            gap: 10px;
+        }
+
+        .record-btns .btn {
+            margin-top: 0;
+        }
+
+        .upload-zone {
+            border: 2px dashed #d0d0d0;
+            border-radius: 12px;
+            padding: 30px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #aaa;
+            margin-top: 14px;
+        }
+
+        .upload-zone:hover,
+        .upload-zone.drag {
+            border-color: #6c63ff;
+            background: #f5f3ff;
+            color: #6c63ff;
+        }
+
+        .upload-zone input {
+            display: none;
+        }
+
+        .file-name {
+            margin-top: 8px;
+            font-size: 0.85rem;
+            color: #6c63ff;
+            font-weight: 600;
+            min-height: 20px;
+        }
+
+        .divider {
+            height: 1px;
+            background: #f0f0f0;
+            margin: 28px 0;
+        }
+
+        .result {
+            display: none;
+        }
+
+        .transcript-box {
+            background: #f9f9f9;
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 24px;
+            font-size: 0.9rem;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .transcript-box .label {
+            font-size: 0.78rem;
+            color: #aaa;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .result-section h3 {
+            font-size: 0.78rem;
+            color: #aaa;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 10px;
+        }
+
+        .prediction-box {
+            background: linear-gradient(135deg, #f5f3ff, #ede9fe);
+            border-left: 4px solid #6c63ff;
+            padding: 14px 16px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+        }
+
+        .prediction-box h2 {
+            font-size: 1.2rem;
+            color: #1a1a2e;
+            font-weight: 700;
+        }
+
+        .bar-row {
+            margin-bottom: 8px;
+        }
+
+        .bar-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: #555;
+            margin-bottom: 3px;
+        }
+
+        .bar-track {
+            background: #f0f0f0;
+            border-radius: 999px;
+            height: 7px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 7px;
+            border-radius: 999px;
+            transition: width 0.5s ease;
+        }
+
+        .bar-fill.mh  { background: linear-gradient(90deg, #6c63ff, #764ba2); }
+        .bar-fill.mhr { background: #d4d0f5; }
+        .bar-fill.em  { background: linear-gradient(90deg, #f093fb, #f5576c); }
+        .bar-fill.emr { background: #fdd5e2; }
+
+        .error {
+            margin-top: 12px;
+            color: #e74c3c;
+            font-size: 0.88rem;
+            background: #fdf2f2;
+            padding: 10px 14px;
+            border-radius: 8px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="header">
+        <span style="font-size: 2rem">🧠</span>
+        <h1>Mental Health Classifier</h1>
+    </div>
+    <p class="subtitle">Text analysis · Voice emotion detection · Powered by RoBERTa + wav2vec2 + Whisper</p>
+
+    <div class="tabs">
+        <button class="tab active" onclick="switchTab('text')">📝 Text Input</button>
+        <button class="tab" onclick="switchTab('audio')">🎙️ Audio Input</button>
+    </div>
+
+    <!-- Text Input Panel -->
+    <div class="panel active" id="panel-text">
+        <textarea id="inputText" placeholder="e.g. I've been feeling really hopeless lately..."></textarea>
+        <button class="btn" onclick="classifyText()">Classify Text</button>
+        <p class="error" id="textError"></p>
+
+        <div class="result" id="textResult">
+            <div class="divider"></div>
+            <div class="result-section">
+                <h3>Mental Health Category</h3>
+                <div class="prediction-box">
+                    <h2 id="textPrediction"></h2>
+                </div>
+                <div id="textBars"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audio Input Panel -->
+    <div class="panel" id="panel-audio">
+
+        <div class="record-zone" id="recordZone">
+            <div class="icon" id="recordIcon">🎙️</div>
+            <p id="recordStatus">Click to start recording</p>
+            <div class="record-timer" id="recordTimer" style="display: none">
+                ⏺ <span id="timerDisplay">0:00</span>
+            </div>
+        </div>
+
+        <div class="record-btns">
+            <button class="btn" id="recordBtn" onclick="toggleRecording()" style="margin-top: 0;">
+                🎙️ Start Recording
+            </button>
+            <button class="btn" onclick="toggleUpload()" style="margin-top: 0; background: white; color: #6c63ff; border: 1.5px solid #6c63ff;">
+                📁 Upload File
+            </button>
+        </div>
+
+        <div id="uploadSection" style="display: none;">
+            <div class="upload-zone" id="dropZone"
+                 onclick="document.getElementById('audioFile').click()"
+                 ondragover="event.preventDefault(); this.classList.add('drag')"
+                 ondragleave="this.classList.remove('drag')"
+                 ondrop="handleDrop(event)">
+                <input type="file" id="audioFile" accept="audio/*" onchange="handleFile(this.files[0])">
+                <div style="font-size: 2rem; margin-bottom: 8px;">🎵</div>
+                <p>Click to upload or drag & drop</p>
+                <p style="font-size: 0.8rem; margin-top: 4px;">WAV, MP3, M4A, OGG supported</p>
+            </div>
+            <div class="file-name" id="fileName"></div>
+            <button class="btn" id="audioBtn" onclick="classifyAudio()" disabled>Analyse File</button>
+        </div>
+
+        <p class="error" id="audioError"></p>
+
+        <div class="result" id="audioResult">
+            <div class="divider"></div>
+            <div class="transcript-box">
+                <span class="label">Transcript (Whisper)</span>
+                <span id="transcriptText"></span>
+            </div>
+            <div class="two-col">
+                <div class="result-section">
+                    <h3>🧠 Mental Health</h3>
+                    <div class="prediction-box">
+                        <h2 id="audioPrediction"></h2>
+                    </div>
+                    <div id="audioBars"></div>
+                </div>
+                <div class="result-section">
+                    <h3>🎙️ Voice Emotion</h3>
+                    <div class="prediction-box" style="background: linear-gradient(135deg, #fff0f6, #ffe4f0); border-color: #f5576c;">
+                        <h2 id="emotionPrediction" style="color: #c0392b;"></h2>
+                    </div>
+                    <div id="emotionBars"></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    let selectedFile  = null;
+    let mediaRecorder = null;
+    let audioChunks   = [];
+    let timerInterval = null;
+    let seconds       = 0;
+    let isRecording   = false;
+
+    function switchTab(tab) {
+        document.querySelectorAll('.tab').forEach((t, i) =>
+            t.classList.toggle('active', (i === 0 && tab === 'text') || (i === 1 && tab === 'audio'))
+        );
+        document.getElementById('panel-text').classList.toggle('active', tab === 'text');
+        document.getElementById('panel-audio').classList.toggle('active', tab === 'audio');
+    }
+
+    function toggleUpload() {
+        const sec = document.getElementById('uploadSection');
+        sec.style.display = sec.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function handleFile(file) {
+        if (!file) return;
+        selectedFile = file;
+        document.getElementById('fileName').textContent = '📎 ' + file.name;
+        document.getElementById('audioBtn').disabled = false;
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        handleFile(e.dataTransfer.files[0]);
+    }
+
+    function renderBars(container, data, topClass, restClass) {
+        const sorted = Object.entries(data).sort((a, b) => b[1] - a[1]);
+        container.innerHTML = sorted.map(([label, prob], i) => {
+            const pct = (prob * 100).toFixed(1);
+            return `<div class="bar-row">
+                <div class="bar-label"><span>${label}</span><span>${pct}%</span></div>
+                <div class="bar-track">
+                    <div class="bar-fill ${i === 0 ? topClass : restClass}" style="width: ${pct}%"></div>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    async function toggleRecording() {
+        if (!isRecording) {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                mediaRecorder.onstop = async () => {
+                    const blob = new Blob(audioChunks, { type: 'audio/wav' });
+                    await sendAudioBlob(blob);
+                    stream.getTracks().forEach(t => t.stop());
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+
+                // Auto-stop after 60 seconds so we don't send a massive file
+                setTimeout(() => { if (isRecording) toggleRecording(); }, 60000);
+
+                document.getElementById('recordZone').classList.add('recording');
+                document.getElementById('recordIcon').textContent = '🔴';
+                document.getElementById('recordStatus').textContent = 'Recording... speak now';
+                document.getElementById('recordTimer').style.display = 'block';
+                document.getElementById('recordBtn').textContent = '⏹ Stop & Analyse';
+                document.getElementById('recordBtn').style.background = 'linear-gradient(135deg, #e74c3c, #c0392b)';
+
+                seconds = 0;
+                timerInterval = setInterval(() => {
+                    seconds++;
+                    const m = Math.floor(seconds / 60);
+                    const s = seconds % 60;
+                    document.getElementById('timerDisplay').textContent = `${m}:${s.toString().padStart(2, '0')}`;
+                }, 1000);
+
+            } catch (e) {
+                const err = document.getElementById('audioError');
+                err.textContent = 'Microphone access denied. Please allow mic permissions in your browser.';
+                err.style.display = 'block';
+            }
+        } else {
+            mediaRecorder.stop();
+            isRecording = false;
+            clearInterval(timerInterval);
+
+            document.getElementById('recordZone').classList.remove('recording');
+            document.getElementById('recordIcon').textContent = '🎙️';
+            document.getElementById('recordStatus').textContent = 'Analysing...';
+            document.getElementById('recordBtn').textContent = '⏳ Processing...';
+            document.getElementById('recordBtn').disabled = true;
+            document.getElementById('recordTimer').style.display = 'none';
+        }
+    }
+
+    async function sendAudioBlob(blob) {
+        const err = document.getElementById('audioError');
+        err.style.display = 'none';
+        document.getElementById('audioResult').style.display = 'none';
+
+        const formData = new FormData();
+        formData.append('audio', blob, 'recording.wav');
+
+        try {
+            const res = await fetch('/predict_audio', { method: 'POST', body: formData });
+            const data = await res.json();
+
+            if (data.error) {
+                err.textContent = data.error;
+                err.style.display = 'block';
+                return;
+            }
+
+            document.getElementById('transcriptText').textContent = data.transcript;
+            document.getElementById('audioPrediction').textContent = data.mental_health.prediction;
+            document.getElementById('emotionPrediction').textContent = data.voice_emotion.prediction;
+            renderBars(document.getElementById('audioBars'), data.mental_health.confidence, 'mh', 'mhr');
+            renderBars(document.getElementById('emotionBars'), data.voice_emotion.confidence, 'em', 'emr');
+            document.getElementById('audioResult').style.display = 'block';
+            document.getElementById('recordStatus').textContent = 'Click to record again';
+
+        } catch (e) {
+            err.textContent = 'Server error. Please try again.';
+            err.style.display = 'block';
+        } finally {
+            document.getElementById('recordBtn').disabled = false;
+            document.getElementById('recordBtn').textContent = '🎙️ Start Recording';
+            document.getElementById('recordBtn').style.background = 'linear-gradient(135deg, #6c63ff, #764ba2)';
+        }
+    }
+
+    async function classifyAudio() {
+        if (!selectedFile) return;
+
+        const err = document.getElementById('audioError');
+        err.style.display = 'none';
+
+        const btn = document.getElementById('audioBtn');
+        btn.disabled = true;
+        btn.textContent = 'Analysing...';
+
+        const formData = new FormData();
+        formData.append('audio', selectedFile);
+
+        try {
+            const res = await fetch('/predict_audio', { method: 'POST', body: formData });
+            const data = await res.json();
+
+            if (data.error) {
+                err.textContent = data.error;
+                err.style.display = 'block';
+                return;
+            }
+
+            document.getElementById('transcriptText').textContent = data.transcript;
+            document.getElementById('audioPrediction').textContent = data.mental_health.prediction;
+            document.getElementById('emotionPrediction').textContent = data.voice_emotion.prediction;
+            renderBars(document.getElementById('audioBars'), data.mental_health.confidence, 'mh', 'mhr');
+            renderBars(document.getElementById('emotionBars'), data.voice_emotion.confidence, 'em', 'emr');
+            document.getElementById('audioResult').style.display = 'block';
+
+        } catch (e) {
+            err.textContent = 'Server error. Please try again.';
+            err.style.display = 'block';
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Analyse File';
+        }
+    }
+
+    async function classifyText() {
+        const text = document.getElementById('inputText').value.trim();
+        const err = document.getElementById('textError');
+        err.style.display = 'none';
+        document.getElementById('textResult').style.display = 'none';
+
+        if (!text) {
+            err.textContent = 'Please enter some text.';
+            err.style.display = 'block';
+            return;
+        }
+
+        const btn = document.querySelector('#panel-text .btn');
+        btn.disabled = true;
+        btn.textContent = 'Classifying...';
+
+        try {
+            const res = await fetch('/predict', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text })
+            });
+            const data = await res.json();
+
+            if (data.error) {
+                err.textContent = data.error;
+                err.style.display = 'block';
+                return;
+            }
+
+            document.getElementById('textPrediction').textContent = data.prediction;
+            renderBars(document.getElementById('textBars'), data.confidence, 'mh', 'mhr');
+            document.getElementById('textResult').style.display = 'block';
+
+        } catch (e) {
+            err.textContent = 'Server error. Please try again.';
+            err.style.display = 'block';
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Classify Text';
+        }
+    }
+</script>
+
+</body>
+</html>
